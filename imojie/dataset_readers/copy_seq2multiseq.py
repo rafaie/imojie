@@ -155,6 +155,7 @@ class CopySeq2MultiSeqNetDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path):
+        print('It is seq reader .....')
         with open(cached_path(file_path), "r") as data_file:
             logger.info("Reading instances from lines in file at: %s", file_path)
             target_sequences, confidences = [], []
@@ -319,3 +320,40 @@ class CopySeq2MultiSeqNetDatasetReader(DatasetReader):
             return None
 
         return Instance(fields_dict)
+
+
+from allennlp.data.tokenizers.pretrained_transformer_tokenizer import PretrainedTransformerTokenizer
+from allennlp.data.token_indexers.pretrained_transformer_indexer import PretrainedTransformerIndexer
+
+
+def test_dataset_reader():
+    model_name = 'bert-base-uncased'
+    source_tokenizer = PretrainedTransformerTokenizer(model_name=model_name, do_lowercase=True)
+    target_tokenizer = PretrainedTransformerTokenizer(model_name=model_name, do_lowercase=True)
+    source_token_indexers = {"tokens": PretrainedTransformerIndexer(
+        model_name=model_name, do_lowercase=True, namespace='bert')}
+
+    ds = CopySeq2MultiSeqNetDatasetReader(
+        target_namespace='bert',
+        source_tokenizer=source_tokenizer,
+        target_tokenizer=target_tokenizer,
+        source_token_indexers=source_token_indexers,
+        lazy=True,
+        max_tokens=500,
+        bert=True,
+        max_extractions=10)
+
+    instances = ds._read("/Users/mostafa/git/deep/openie/imojie/data/train/4cr_qpbo_extractions.tsv")
+
+    for instance in list(instances)[:10]:
+        print(instance)
+        print('*'*70)
+    ds._validation = True
+    instances2 = ds._read("/Users/mostafa/git/deep/openie/imojie/data/dev/carb_sentences.txt")
+    for instance in list(instances2)[:10]:
+        print(instance)
+        print('*'*70)
+
+
+if __name__ == "__main__":
+    test_dataset_reader()
